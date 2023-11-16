@@ -113,3 +113,46 @@ df_study |>
   
 ```
 This is a spaghetti plot of the observations on each subject over time. The rate of change for the control group is constant while the rate of change for experimental is increasing at a linear rate.
+
+## Problem 3
+
+```{r}
+n = 30
+sets = 5000
+sig = 5
+alp = 0.05
+h0 = 0
+
+sim_normal = function(mu, n_samp = n, sigma = sig, alpha = alp, null= h0){
+  rnorm(n = n_samp, mean = mu, sd = 5) |> 
+  t.test(null.value = null, conf.level = 1-alpha)
+}
+ 
+df_sim_normal = expand_grid(
+    mean = 0:6,
+    iter = 1:sets
+  ) |>
+  mutate(
+    estimate = map(mean, sim_normal),
+    estimate = map(estimate, tidy)
+  ) |>
+  unnest_wider(estimate) |>
+  select(mean, iter, estimate, p.value)
+
+df_sim_normal
+```
+
+Generated 5000 datasets with each mu 0 to 6 using randomized normal distribution where n = 30, sigma = 5. 
+
+```{r}
+df_sim_normal |>
+  group_by(mean) |>
+  summarize(power = sum(p.value < alp) / sets) |>
+  ggplot(aes(x = mean, y = power)) +
+  geom_point() +
+  geom_line()
+```
+
+This is a plot the proportion of times the null was rejected (the power of the test) on the y axis and the true value of mu on the x axis. There is a positive relationship between the effect size and the power. Power stayed at 1 after reaching around mean 4.
+
+
