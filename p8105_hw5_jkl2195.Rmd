@@ -1,0 +1,84 @@
+---
+title: "p8105_hw5_jkl2195"
+author: "Jessie Li"
+date: "2023-11-02"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(stringr)
+library(purrr)
+library(broom)
+library(forcats)
+```
+
+## Problem 1
+
+```{r}
+df_homicide = read.csv("data/homicide-data.csv") |>
+  mutate(
+    city_state = str_c(city, ", ", state)
+  ) |>
+  select(-city, -state)
+
+```
+
+Number of Homicides organized by cities
+```{r}
+df_unsolved_homicide = df_homicide |>
+  group_by(city_state) |>
+  summarize(
+    total_homicides = n(), 
+    unsolved_homicides = 
+      sum(str_detect(disposition, "without|No"))
+  )
+df_unsolved_homicide
+```
+Estimate the proportion of homicide that are unsolved in Baltimore, MD
+
+
+```{r}
+  prop.test(
+    df_unsolved_homicide |>
+    filter(city_state == "Baltimore, MD") |> 
+    pull(unsolved_homicides),
+    df_unsolved_homicide |>
+    filter(city_state == "Baltimore, MD") |> 
+    pull(total_homicides)
+  ) |>
+  tidy() |>
+  select(estimate, conf.low, conf.high)
+```
+
+```{r}
+df_unsolved_prop = df_unsolved_homicide |>
+  mutate(
+   estimate = map2(
+    df_unsolved_homicide |>
+      pull(unsolved_homicides),
+    df_unsolved_homicide |>
+      pull(total_homicides),
+    prop.test
+    ),
+    estimate = map(estimate, tidy)
+  ) |>
+  unnest_wider(estimate) |>
+  select(city_state, estimate, conf.low, conf.high)
+
+df_unsolved_prop
+```
+This is a table of the proportion of unsolved homicides and the confidence interval of each.
+
+```{r fig.height = 10, fig.width = 10}
+df_unsolved_prop |>
+  ggplot(aes(x = city_state, y = estimate, color = city_state)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+  theme(
+    legend.position="bottom", 
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+This is a plot of the proportion of unsolved homicides bounded by the confidence interval of each.
+
