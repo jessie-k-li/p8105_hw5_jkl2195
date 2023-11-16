@@ -153,6 +153,24 @@ df_sim_normal |>
   geom_line()
 ```
 
-This is a plot the proportion of times the null was rejected (the power of the test) on the y axis and the true value of mu on the x axis. There is a positive relationship between the effect size and the power. Power stayed at 1 after reaching around mean 4.
+This is a plot the proportion of times the null was rejected (the power of the test) on the y axis and the true value of mu on the x axis. There is a positive relationship between the effect size and the power. Power stayed around 1 after reaching around mean 4.
+
+```{r}
+df_sim_normal |>
+  group_by(mean) |>
+  summarize(average_mean = mean(estimate)) |>
+  ggplot(aes(x = mean, y = average_mean)) +
+  geom_line() +
+  geom_line(data = df_sim_normal |>
+              filter(p.value < alp) |>
+              group_by(mean) |>
+              summarize(average_mean = mean(estimate)),
+            color = "red")
+
+```
+
+This a plot showing the average estimate of mu hat on the y axis and the true value of mu on the x axis for all samples (black) vs samples for which the null was rejected (red).
+
+The sample average of mu hat is not approximately equal to the true value of mu mainly due to the small sample size of 30. Larger sample size can be used to higher the approximation.
 
 
