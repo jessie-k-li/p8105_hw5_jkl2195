@@ -82,3 +82,24 @@ df_unsolved_prop |>
 ```
 This is a plot of the proportion of unsolved homicides bounded by the confidence interval of each.
 
+## Problem 2
+```{r}
+filenames = list.files(path = "./data", pattern = ".+[0-9].+", full.names = TRUE)
+
+df_study = map(filenames, read.csv) |>
+  bind_rows() |>
+  mutate(
+    group = map(filenames, str_extract, "[:alpha:]{3}(?=_)") |>
+      as.character(),
+    id = map(filenames, str_extract, "[:digit:]{2}") |> 
+      as.numeric()
+  ) |>
+  pivot_longer(
+    cols = week_1:week_8,
+    names_to = "week",
+    names_pattern = "week_(.)",
+    values_to = "observation"
+  )
+df_study
+```
+Cleaned up dataset about a longitudinal study that included a control arm and an experimental arm.
